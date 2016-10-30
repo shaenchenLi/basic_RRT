@@ -1,6 +1,8 @@
 #ifndef COLLISION_CHECK_H
 #define COLLISION_CHECK_H
 
+//#include <memory>
+//using std::shared_ptr;
 #include <iostream>
 using std::cout; using std::endl;
 
@@ -14,6 +16,7 @@ using namespace cv;
 
 namespace Collision
 {
+	//void maptoMat(Mat *environmat, Environment::EnvironMap *environmap);
 	Mat* maptoMat(Environment::EnvironMap *environmap);
 
 	struct collision
@@ -31,6 +34,7 @@ namespace Collision
 			origin[1] = environmap->_range()->begin()->y;
 			collision_map = nullptr;
 			_collision_map(environmap);
+			space = 4.5f;// depending on the length of the vehicle and the circle
 
 		}
 		~collision()
@@ -51,6 +55,7 @@ namespace Collision
 		Mat* kernel;
 		float interval;
 		float origin[2];
+		float space;
 	};
 }
 

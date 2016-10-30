@@ -17,6 +17,9 @@ namespace Trajectory
 {
 	void norm_theta_2pi(float *theta);
 	void norm_theta_pi(float *theta);
+	float dist(const Vehicle::Node &n1, const Vehicle::Node &n2);
+	float dist(const float &x1, const float &y1, const float &x2, const float &y2);
+//	bool find_theta(const float &l) {return }
 
 	struct State
 	{
@@ -91,6 +94,7 @@ namespace Trajectory
 		traj(const VectorXf &Xi, const VectorXf &Xg)
 		{
 			ctrl_points.emplace_back(Xi[0], Xi[1]);
+			//knots = { 1., 0.7, 0.7, 0.4, 0.4, 0.1, 0.1, 0. };
 			knots = { 1., 0. };
 			bound.emplace_back(Xi);
 			bound.emplace_back(Xg);

@@ -1,6 +1,6 @@
 #include "Trajectory.h"
 
-float eps = 1e-6;
+float eps = 1e-6f;
 
 void Trajectory::norm_theta_2pi(float *theta)
 {
@@ -20,11 +20,26 @@ void Trajectory::norm_theta_pi(float *theta)
 		*theta = Vehicle::PI + *theta;
 }
 
+float Trajectory::dist(const Vehicle::Node &n1, const Vehicle::Node &n2)
+{
+	return sqrtf(powf(n1.x - n2.x, 2) + powf(n1.y - n2.y, 2));
+}
+
+float Trajectory::dist(const float &x1, const float &y1, const float &x2, const float &y2)
+{
+	return sqrtf(powf(x1 - x2, 2) + powf(y1 - y2, 2));
+}
 void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree, const float &step, Collision::collision *collimap)
 {
-	float theta_min = atanf(Vehicle::LA*(std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN)))) + 0.01*Vehicle::PI;
+	Matrix<float, 6, 2> L_theta;
+	for (int i = 0; i < 6;i++) //float t = Vehicle::PI / 3; t <= 5 * Vehicle::PI / 6; t += 0.1*Vehicle::PI)
+	{
+		L_theta(i, 1) = Vehicle::PI / 3 + i*0.1f*Vehicle::PI;
+		L_theta(i, 0) = sinf(L_theta(i, 1)) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 - cosf(L_theta(i, 1))) / 8, -1.5) / 6;
+		
+	}// to satisfy the maximum 
 
-	float x, y;
+	float x, y, theta;
 
 	std::vector<Vehicle::Node> tree_tmp = route_tree;
 	std::vector<Vehicle::Node> route = { *tree_tmp.begin() };
@@ -32,32 +47,22 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 	{
 		if (node == tree_tmp.begin())
 		{
-			x = tree_tmp.begin()->x + 0.5f*step*cos(tree_tmp.begin()->theta);
-			y = tree_tmp.begin()->y + 0.5f*step*sin(tree_tmp.begin()->theta);
-			while (collimap->iscollision(x, y, tree_tmp.begin()->theta))
-			{
-				x = 0.5f*(x + tree_tmp.begin()->x);
-				y = 0.5f*(y + tree_tmp.begin()->y);
-			}
+			x = tree_tmp.begin()->x + 5 * cos(tree_tmp.begin()->theta);
+			y = tree_tmp.begin()->y + 5 * sin(tree_tmp.begin()->theta);
 			route.emplace_back(x, y, tree_tmp.begin()->theta, 0.f);
 			(tree_tmp.begin() + 1)->reset(atan2f(node->y - y, node->x - x));
 			continue;
 		}
+		/*else if (node == route_tree.begin() + 1)
+			route.emplace_back(node->x, node->y, atan2f(node->y - y, node->x - x),node->k);*/
 		else if (node == tree_tmp.end() - 1)
 		{
-			x = tree_tmp.rbegin()->x - 0.5f*step*cos(tree_tmp.rbegin()->theta);
-			y = tree_tmp.rbegin()->y - 0.5f*step*sin(tree_tmp.rbegin()->theta);
-			float theta = atan2f(y - route.rbegin()->y, x - route.rbegin()->x);
-			while (collimap->iscollision(x, y, theta))
-			{
-				x = 0.5f*(x + tree_tmp.rbegin()->x);
-				y = 0.5f*(y + tree_tmp.rbegin()->y);
-				theta = atan2f(y - (node - 1)->theta, x - (node - 1)->theta);
-			}
-
+			x = tree_tmp.rbegin()->x - 5 * cos(tree_tmp.rbegin()->theta);
+			y = tree_tmp.rbegin()->y - 5 * sin(tree_tmp.rbegin()->theta);
+			theta = atan2f(y - route.rbegin()->y, x - route.rbegin()->x);
 			float unit_dis = 2.f; //distance between two sampled used to detect collision
-			float dis = sqrtf(powf(route.rbegin()->x - x, 2) + powf(route.rbegin()->y - y, 2));
-			for (int s = unit_dis; s < dis; s += unit_dis)
+			float dis = dist(route.rbegin()->x, route.rbegin()->y, x, y);
+			for (float s = unit_dis; s < dis; s += unit_dis)
 			{
 				if (collimap->iscollision(route.rbegin()->x + s*cosf(theta), route.rbegin()->y + s*sinf(theta), theta))
 					route.emplace_back(*(node - 1));
@@ -68,9 +73,9 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 		}
 		
 		float unit_dis = 2.f; //distance between two sampled used to detect collision
-		float dis = sqrtf(powf(route.rbegin()->x - node->x, 2) + powf(route.rbegin()->y - node->y, 2));
+		float dis = dist(*route.rbegin(), *node);
 		float theta = atan2f(node->y - route.rbegin()->y, node->x - route.rbegin()->x);
-		for (int s = unit_dis; s < dis; s += unit_dis)
+		for (float s = unit_dis; s < dis; s += unit_dis)
 		{
 			if (collimap->iscollision(route.rbegin()->x + s*cosf(theta), route.rbegin()->y + s*sinf(theta), theta))
 			{
@@ -80,52 +85,55 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 			}
 		}
 	}
-	
+
+	Vehicle::Node reference_node = *(route.begin());
+	float theta_min/*, L_min*/;
 	for (auto node = route.begin() + 1; node != route.end() - 1; node++)
 	{
 		float theta = node->theta - (node + 1)->theta;
-		Trajectory::norm_theta_pi(&theta);
-
+		norm_theta_pi(&theta);
+		float L = std::min(dist(reference_node, *node), dist(*node, *(node + 1)));
+		for (int i = 0; i < 6; i++)
+		{
+			if (L_theta(i, 0) < L)
+			{
+				theta_min = L_theta(i, 1);
+				//L_min = L_theta(i, 0);
+				break;
+			}
+		}
 		if (theta < theta_min)
 		{
 			float delta;
-			delta = theta_min - theta;
-			Vehicle::Node reference_node = *(node - 1);
+			delta = L_theta(5,1) - theta;
+			//float L = dist(reference_node, *node);
 			//int flag, action;
 			if (node->x>reference_node.x)
 			{
-				x = (reference_node.x*cos(delta) - reference_node.y*sin(delta)) / 5;
-				y = (reference_node.x*sin(delta) + reference_node.y*cos(delta)) / 5;
+				x = (reference_node.x*cos(delta) - reference_node.y*sin(delta)) *L_theta(5, 0) / 5 + (L - L_theta(5, 0)) / L*node->x;
+				y = (reference_node.x*sin(delta) + reference_node.y*cos(delta)) *L_theta(5, 0) / 5 + (L - L_theta(5, 0)) / L*node->y;
 			} //reverse clock
 			else
 			{
-				x = (reference_node.x*cos(delta) + reference_node.y*sin(delta)) / 5;
-				y = (-reference_node.x*sin(delta) + reference_node.y*cos(delta)) / 5;
-			}
-			int insert=0; //0: failed 1:success
-			for (int i = 1; i < 10; i++)
-			{
-				float theta1 = atan2f(y - reference_node.y, x - reference_node.x);
-				float theta2 = atan2f(node->y - y, node->x - x);
-				float alfa1 = theta1 - theta2;
-				float alfa2 = reference_node.theta - theta1;
-				Trajectory::norm_theta_pi(&alfa1);
-				Trajectory::norm_theta_pi(&alfa2);
-				if (alfa1 > theta_min && alfa2 > theta_min && (!collimap->iscollision(x, y, theta1)))
-				{
-					insert = 1;
-					ctrl_points.emplace_back(x, y);
-					ctrl_points.emplace_back(*node);
-					break;
-				}
-				x = 0.5f*(x + node->x);
-				y = 0.5f*(y + node->y);
+				x = (reference_node.x*cos(delta) + reference_node.y*sin(delta)) *L_theta(5, 0) / 5 + (L - L_theta(5, 0)) / L*node->x;
+				y = (-reference_node.x*sin(delta) + reference_node.y*cos(delta)) *L_theta(5, 0) / 5 + (L - L_theta(5, 0)) / L*node->y;
 			}			
-			if (insert == 0)
-				(node + 1)->theta = atan2f((node + 1)->y - reference_node.y, (node + 1)->x - reference_node.x);
+			//if (/*alfa1 > theta_min && alfa2 > theta_min && */(!collimap->iscollision(x, y, atan2f(y - reference_node.y, x - reference_node.x))))
+			if ((!collimap->iscollision(x, y, atan2f(y - reference_node.y, x - reference_node.x))))
+			{
+				ctrl_points.emplace_back(0.5*(x + reference_node.x), 0.5*(y + reference_node.y));
+				ctrl_points.emplace_back(x, y);
+				ctrl_points.emplace_back(0.5*(x + node->x), 0.5*(y + node->y));
+				ctrl_points.emplace_back(*node);
+				reference_node = *node;
+			}
 		}
 		else
+		{
+			ctrl_points.emplace_back(0.5*(node->x + reference_node.x), 0.5*(node->y + reference_node.y));
 			ctrl_points.emplace_back(*node);
+			reference_node = *node;
+		}
 	}
 
 	ctrl_points.emplace_back(*route_tree.rbegin());
@@ -137,12 +145,13 @@ void Trajectory::traj::_bspline()
 	auto n = ctrl_points.size();
 
 	if (n > 5)
-		bspline = ts::BSpline(3, 2, 3 * n, TS_CLAMPED);
+		bspline = ts::BSpline(3, 2, n, TS_CLAMPED);
 	else
-		bspline = ts::BSpline(n - 3, 2, (n - 3)*n, TS_CLAMPED);
+		bspline = ts::BSpline(n - 3, 2, n, TS_CLAMPED);
 
 	std::vector<ts::rational> ctrlp = bspline.ctrlp();
-	for (std::vector<Point>::size_type i = 1; i < n;i++)
+	
+	for (std::vector<Point>::size_type i = 0; i < n;i++)
 	{
 		ctrlp[2 * i] = ctrl_points[i].x;
 		ctrlp[2 * i + 1] = ctrl_points[i].y;		
@@ -178,7 +187,7 @@ void Trajectory::traj::_state(float *accel)
 		auto result = bspline.evaluate(u).result();
 		float theta = atan2f(result[1] - old._node()->y, result[0] - old._node()->x);
 		float k = tanf(theta);
-		float s = sqrtf(pow((result[1] - old._node()->y), 2) + pow((result[0] - old._node()->x), 2));
+		float s = dist(result[0], result[1], old._node()->x, old._node()->y);
 		state_future.emplace_back(result[0], result[1], theta, k, s + old._s_init());
 	}
 	
@@ -241,7 +250,7 @@ void Trajectory::traj::_state(float *accel)
 
 void Trajectory::traj::_v_tmp_dest(const float &accel)
 {
-	float s = sqrtf(pow((bound[0]._node()->x - bound[1]._node()->x), 2) + pow((bound[0]._node()->y - bound[1]._node()->y), 2));
+	float s = dist(bound[0]._node(), bound[1]._node());
 	auto N = knots.size();
 
 	Vector4f coeff_v;
@@ -278,7 +287,7 @@ void Trajectory::traj::_v_tmp_dest(const float &accel)
 	}
 
 	ArrayXXf times = VectorXf::LinSpaced(N, 0., coeff_v[3]);
-	ArrayXXf lengths = times*(coeff_v[0] + times*(coeff_v[1] / 2. + times*coeff_v[2] / 3.));
+	ArrayXXf lengths = times*(coeff_v[0] + times*(coeff_v[1] / 2.f + times*coeff_v[2] / 3.f));
 
 	int j = 1;
 	float t = 0;
