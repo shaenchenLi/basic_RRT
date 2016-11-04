@@ -1,12 +1,31 @@
 #ifndef VEHICLE_H
 #define VEHICLE_H
 
+#include <iostream>
+using std::cout; using std::endl;
+
 #include <cv.h>
 #include <Dense>
 using namespace Eigen;
 
 namespace Vehicle
 {
+	//#define PI (3.141592653589793)d
+	//#define TWO_PI (6.283185307179586)d
+	//
+	//#define L (3.569)d
+	//#define W (1.551)d
+	//#define H (1.54)d
+	//#define LA (2.305)d
+	//#define XMAX (100)d
+	//#define XMIN (0)d
+	//#define YMAX (10)d
+	//#define YMIN (-10)d
+	//#define THETAMAX PI
+	//#define THETAMIN -PI
+	//#define KMAX (0.26)d
+	//#define KMIN (-0.26)d
+
 	// key value of vehicle	
 	const float PI = CV_PI;// 3.141592653589793;
 	const float TWO_PI = 2 * PI;
@@ -25,7 +44,9 @@ namespace Vehicle
 	const float KMIN = -0.26f;
 	const float ALATER = 0.4f*9.8f;
 	const float VMAX = 20.0f;
-	
+
+	//const float space = 5;
+
 	struct Node
 	{
 		Node() = default;
@@ -65,6 +86,9 @@ namespace Vehicle
 
 		float x, y, theta, k;
 	};
+
+	bool is_node_effect(const Vehicle::Node &new_node);
+	
 }
 
 #endif

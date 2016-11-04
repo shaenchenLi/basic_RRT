@@ -99,7 +99,7 @@ namespace RRT
 
 		virtual std::string grow(Vehicle::Node *new_node, Collision::collision *collimap);
 		virtual void rand_select(Vehicle::Node *rand_node, const int &iter);
-		virtual bool is_new_effect(Vehicle::Node *new_node);
+		//virtual bool is_new_effect(Vehicle::Node *new_node);
 		void kd_tree(Index* kd_father, const Vehicle::Node &node); //recursive 
 		void kd_tree(RRT_Node *new_node, const Index &insert_index); //insert
 		virtual void nearest_research(Index* near_node, const Vehicle::Node &node);

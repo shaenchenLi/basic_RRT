@@ -10,15 +10,36 @@ using namespace Eigen;
 #include "tinysplinecpp.h"
 
 #include "Collision_check.h"
-#include "RRT.h"
+//#include "RRT.h"
 #include "Vehicle.h"
 
 namespace Trajectory
 {
-	void norm_theta_2pi(float *theta);
+	struct Point
+	{
+		float x, y;
+
+		Point() 
+		{
+			x = y = 0;
+		}
+		Point(const float &x0, const float &y0) :x(x0), y(y0) {}
+		Point(const Vehicle::Node &node) :x(node.x), y(node.y) {}
+		Point(const Point &p) : x(p.x), y(p.y) {}
+
+		void reset(float x0, float y0)
+		{
+			x = x0;
+			y = y0;
+		}
+	};
+
+	void norm_theta_2pi(float *theta); //-pi~pi
 	void norm_theta_pi(float *theta);
+	void norm_theta_0_2pi(float *theta);
 	float dist(const Vehicle::Node &n1, const Vehicle::Node &n2);
 	float dist(const float &x1, const float &y1, const float &x2, const float &y2);
+	float dist(const Point &p);
 //	bool find_theta(const float &l) {return }
 
 	struct State
@@ -113,15 +134,7 @@ namespace Trajectory
 		std::vector<State>* _state_now() { return &state_now; }
 		std::vector<State>* _state_future() { return &state_future; }
 
-	private:
-		struct Point
-		{
-			float x, y;
-
-			Point() = default;
-			Point(const float &x0, const float &y0) :x(x0), y(y0) {}
-			Point(const Vehicle::Node &node) :x(node.x), y(node.y) {}
-		};
+	private:		
 		std::vector<Point> ctrl_points;
 		std::vector<float> v_tmp_dest;// in practical 
 		std::vector<State> state_now;
@@ -133,6 +146,9 @@ namespace Trajectory
 	public:
 		std::vector<Point>* _ctrl_points() { return &ctrl_points; }
 	};
+
+	//Point diff(const State &s1, const State &s2);
+	//Point diff(const State &s1, const State &s2, const State &s3);
 }
 
 #endif

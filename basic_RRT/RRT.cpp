@@ -103,57 +103,6 @@ void RRT::basic_RRT::rand_select(Vehicle::Node *rand_node, const int &iter)
 	*rand_node = Vehicle::Node(X);
 }
 
-bool RRT::basic_RRT::is_new_effect(Vehicle::Node *new_node)
-{
-	// estimate point A
-	cout << new_node->x << " " << new_node->y << " " << new_node->theta << " " << endl;
-	cout << "estimate point A:" /*<< endl*/;
-	float x = new_node->x - Vehicle::DL*cosf(new_node->theta) - Vehicle::W*sinf(new_node->theta) / 2;
-	cout << x << " ";
-	if (x <= Vehicle::XMIN || x >= Vehicle::XMAX)
-		return false;
-	float y = new_node->y - Vehicle::DL*sinf(new_node->theta) + Vehicle::W*cosf(new_node->theta) / 2;
-	cout << y << endl;
-	if (y <= Vehicle::YMIN || y >= Vehicle::YMAX)
-		return false;
-	
-	//estimate point B
-	cout << "estimate point B:" /*<< endl*/;
-	x += Vehicle::W*sinf(new_node->theta);
-	cout << x << " ";
-	if (x <= Vehicle::XMIN || x >= Vehicle::XMAX)
-		return false;
-	y -= Vehicle::W*cosf(new_node->theta);
-	cout << y << endl;
-	if (y <= Vehicle::YMIN || y >= Vehicle::YMAX)
-		return false;
-
-	// estimate point C
-	cout << "estimate point C:" /*<< endl*/;
-	x += Vehicle::L*cosf(new_node->theta);
-	cout << x << " ";
-	if (x <= Vehicle::XMIN || x >= Vehicle::XMAX)
-		return false;
-	y += Vehicle::L*sinf(new_node->theta);
-	cout << y << endl;
-	if (y <= Vehicle::YMIN || y >= Vehicle::YMAX)
-		return false;
-
-	// estimate point D
-	cout << "estimate point D:" /*<< endl*/;
-	x -= Vehicle::W*sinf(new_node->theta);
-	cout << x << " ";
-	if (x <= Vehicle::XMIN || x >= Vehicle::XMAX)
-		return false;
-	y += Vehicle::W*cosf(new_node->theta);
-	cout << y << endl;
-	if (y <= Vehicle::YMIN || y >= Vehicle::YMAX)
-		return false;
-
-	cout << "effective" << endl;
-	return true;
-}
-
 std::string RRT::basic_RRT::grow(Vehicle::Node *new_node, Collision::collision *collimap)
 {
 	std::string result = "failed";
@@ -168,7 +117,7 @@ std::string RRT::basic_RRT::grow(Vehicle::Node *new_node, Collision::collision *
 	cout << "near_node:" << near_node._node()->x << "  " << near_node._node()->y << "  " << near_node._node()->theta << "  " << endl;
 	cout << "new_node:" << new_node->x << "  " << new_node->y << "  " << new_node->theta << "  " << endl;
 	
-	if (is_new_effect(new_node))
+	if (Vehicle::is_node_effect(*new_node))
 	{
 		if (new_node->x >= dest._node()->x - 1 && new_node->x <= dest._node()->x + 1 && new_node->y >= dest._node()->y - 1 && new_node->y <= dest._node()->y + 1)
 		{
@@ -187,7 +136,10 @@ std::string RRT::basic_RRT::grow(Vehicle::Node *new_node, Collision::collision *
 		else
 		{
 			if (!collimap->iscollision(near_node._node(), *new_node))
-			{				
+			{
+				//cout << tree.size() << endl;
+				//cout << "new_node:" << new_node->x << "  " << new_node->y << "  " << new_node->theta << "  " << endl;
+				//cout << "near_node:" << near_node._node()->x << "  " << near_node._node()->y << "  " << near_node._node()->theta << "  " << endl;
 				Index new_index = tree.size();
 				tree.emplace_back(*new_node, new_index, near_node_index, max_size + 1);
 				tree[near_node_index]._successor(new_index);
