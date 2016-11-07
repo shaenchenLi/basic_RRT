@@ -10,12 +10,6 @@ namespace Environment
 {
 	struct position
 	{
-		/*size_t hasher(const float &p)
-		{
-			return std::hash<float>()(p + 1.2);
-		}
-		using try_map = std::unordered_map<float, int, decltype(hasher)*>;*/
-
 		float x, y;
 		position(const float &a, const float &b) :x(a), y(b) {}
 	};
@@ -23,15 +17,6 @@ namespace Environment
 	struct EnvironMap
 	{
 		//xy coordinates of all objects are relative to vehicle
-		/*bool equal(const position &p1, const position &p2)
-		{
-			return p1.x == p2.x && p1.y == p2.y;
-		}
-
-		size_t hash_value(const position &p)
-		{
-			return std::hash<float>()(p.x);
-		}*/
 
 		struct HashFunc
 		{
@@ -53,14 +38,11 @@ namespace Environment
 
 		EnvironMap(const position &xymin, const position &xymax, const float &inter = 0.25) :interval(inter)
 		{
-			//int N = ((int)std::ceil((xymax.x - xymin.x) / inter) + 1)*((int)std::ceil((xymax.y - xymin.y) / inter) + 1);
-			//environment.reserve(N);
 			for (float i = xymin.x; i < xymax.x + interval; i += interval)
 				for (float j = xymin.y; j < xymax.y + interval; j += interval)
 				{
 					range = { xymin, xymax };
 					position key(i, j);
-					//std::pair<position, int> element;
 					environment.insert({ key, 0 });
 				}
 		}

@@ -1,6 +1,7 @@
 #ifndef TRAJECTORY_H
 #define TRAJECTORY_H
 
+#include <algorithm>
 #include <math.h>
 #include <vector>
 
@@ -74,6 +75,7 @@ namespace Trajectory
 			node.x = x0;
 			node.y = y0;
 		}
+		State(const Vehicle::Node &n, const float &v0, const float &s) :node(n), v(v0), s_init(s) {}
 		State(const State &s) :node(s.node), v(s.v), s_init(s.s_init) {}
 
 		Vehicle::Node* _node() { return &node; }
@@ -82,6 +84,7 @@ namespace Trajectory
 		float _theta() const { return node.theta; }
 		float _k() const { return node.k; }
 
+		void _v(const float &v0) { v = v0; }
 		void _theta(const float &t) { node.theta = t; }
 		void _k(const float &k0) { node.k = k0; }
 		void _node(const float &x0, const float &y0, const float &t0, const float &k0)
@@ -98,7 +101,6 @@ namespace Trajectory
 			node.theta = n.theta;
 			node.k = n.k;
 		}
-		void _v(const float &v0) { v = v0; }
 		void _s_init(const float &s) { s_init = s; }
 
 	private:
@@ -122,11 +124,22 @@ namespace Trajectory
 			v_tmp_dest.emplace_back(Xg[4]);
 			_v_tmp_dest(Xi[5]);
 		}
+		traj(State Xi, State Xg, const float &accel, std::vector<State> *adjust_states_front)
+		{
+			ctrl_points.emplace_back(*Xi._node());
+			//knots = { 1., 0.7, 0.7, 0.4, 0.4, 0.1, 0.1, 0. };
+			knots = { 1., 0. };
+			bound.emplace_back(Xi);
+			bound.emplace_back(Xg);
+			v_tmp_dest.emplace_back(Xg._v());
+			_v_tmp_dest(accel);
+			state_now = *adjust_states_front;
+		}
 		
 		void _ctrl_points(const std::vector<Vehicle::Node> &route_tree, const float &step, Collision::collision *collimap);
 		void _bspline();
-		void _state(float *accel);
-		std::vector<State>* _state(const float &a0, const float &sg); //in practical when sg<state.end-10, calculate state_future
+		void _state(float *accel, std::vector<State> *adjust_states_end);
+		std::vector<State>* _state(const float &a0, const float &sg, std::vector<State> *adjust_states_end); //in practical when sg<state.end-10, calculate state_future
 		void _v_tmp_dest(const float &accel);
 
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -149,6 +162,7 @@ namespace Trajectory
 
 	//Point diff(const State &s1, const State &s2);
 	//Point diff(const State &s1, const State &s2, const State &s3);
+	void adjust_k(const VectorXf &x, State *state, std::vector<State> *adjust_states, const int &flag); // flag=1 0-k  flag=-1 k-0
 }
 
 #endif

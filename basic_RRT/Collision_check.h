@@ -16,7 +16,6 @@ using namespace cv;
 
 namespace Collision
 {
-	//void maptoMat(Mat *environmat, Environment::EnvironMap *environmap);
 	Mat* maptoMat(Environment::EnvironMap *environmap);
 
 	struct collision

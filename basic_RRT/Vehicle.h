@@ -8,45 +8,27 @@ using std::cout; using std::endl;
 #include <Dense>
 using namespace Eigen;
 
+#define PI CV_PI
+#define TWO_PI (2*PI)
+#define L 3.569f
+#define W 1.551f
+#define H 1.5f
+#define LA 2.305f
+#define DL 0.5f
+#define XMAX 100.0f
+#define XMIN 0.0f
+#define YMAX 15.0f
+#define YMIN 0.0f
+#define THETAMAX PI
+#define THETAMIN (-PI)
+#define KMAX 0.26f
+#define KMIN (-0.26f)
+#define ALATER 0.4f*9.8f
+#define VMAX 20.f
+#define WMAX 1.56 //rad/s
+
 namespace Vehicle
 {
-	//#define PI (3.141592653589793)d
-	//#define TWO_PI (6.283185307179586)d
-	//
-	//#define L (3.569)d
-	//#define W (1.551)d
-	//#define H (1.54)d
-	//#define LA (2.305)d
-	//#define XMAX (100)d
-	//#define XMIN (0)d
-	//#define YMAX (10)d
-	//#define YMIN (-10)d
-	//#define THETAMAX PI
-	//#define THETAMIN -PI
-	//#define KMAX (0.26)d
-	//#define KMIN (-0.26)d
-
-	// key value of vehicle	
-	const float PI = CV_PI;// 3.141592653589793;
-	const float TWO_PI = 2 * PI;
-	const float L = 3.569f;
-	const float W = 1.551f;
-	const float LA = 2.305f;
-	const float DL = 0.5f; // the distance between the rear axle center and end of vehicle
-	const float H = 1.5f;
-	const float XMAX = 100.0f;
-	const float XMIN = 0.0f;
-	const float YMIN = 0.0f;
-	const float YMAX = 15.0f;
-	const float THETAMAX = PI;
-	const float THETAMIN = -PI;
-	const float KMAX = 0.26f;
-	const float KMIN = -0.26f;
-	const float ALATER = 0.4f*9.8f;
-	const float VMAX = 20.0f;
-
-	//const float space = 5;
-
 	struct Node
 	{
 		Node() = default;
@@ -88,7 +70,7 @@ namespace Vehicle
 	};
 
 	bool is_node_effect(const Vehicle::Node &new_node);
-	
+
 }
 
 #endif

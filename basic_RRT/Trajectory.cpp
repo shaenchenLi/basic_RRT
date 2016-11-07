@@ -4,27 +4,27 @@ float eps = 1e-6f;
 
 void Trajectory::norm_theta_0_2pi(float *theta)
 {
-	*theta = std::fmod(*theta, Vehicle::TWO_PI);
-	if (*theta < -Vehicle::PI)
-		*theta += Vehicle::TWO_PI;
-	else if (*theta>Vehicle::PI)
-		*theta -= Vehicle::TWO_PI;
+	*theta = std::fmod(*theta, TWO_PI);
+	if (*theta < -PI)
+		*theta += TWO_PI;
+	else if (*theta>PI)
+		*theta -= TWO_PI;
 }
 
 void Trajectory::norm_theta_2pi(float *theta)
 {
 	norm_theta_0_2pi(theta);
-	if (*theta > Vehicle::PI)
-		*theta -= 2 * Vehicle::PI;
+	if (*theta > PI)
+		*theta -= 2 * PI;
 }
 
 void Trajectory::norm_theta_pi(float *theta)
 {
 	norm_theta_0_2pi(theta);
 	if (*theta > 0)
-		*theta = Vehicle::PI - *theta;
+		*theta = PI - *theta;
 	else
-		*theta = Vehicle::PI + *theta;
+		*theta = PI + *theta;
 }
 
 float Trajectory::dist(const Vehicle::Node &n1, const Vehicle::Node &n2)
@@ -42,30 +42,16 @@ float Trajectory::dist(const Point &p)
 	return sqrtf(powf(p.x, 2) + powf(p.y, 2));
 }
 
-//Trajectory::Point diff(Trajectory::State *s1, Trajectory::State *s2)
-//{
-//	return Trajectory::Point(s1->_node()->x - s2->_node()->x, s1->_node()->y - s2->_node()->y);
-//}
-//
-//Trajectory::Point diff(Trajectory::State *s1, Trajectory::State *s2, Trajectory::State *s3)
-//{
-//	Trajectory::Point p1 = diff(s1, s2);
-//	Trajectory::Point p2 = diff(s2, s3);
-//	return Trajectory::Point(p1.x - p2.x, p1.y - p2.y);
-//}
-
 void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree, const float &step, Collision::collision *collimap)
 {
 	Matrix<float, 6, 2> L_theta;
-	for (int i = 1; i < 6;i++) //float t = Vehicle::PI / 3; t <= 5 * Vehicle::PI / 6; t += 0.1*Vehicle::PI)
+	for (int i = 1; i < 6;i++) 
 	{
-		L_theta(i - 1, 1) = Vehicle::PI / 3 + i*0.1f*Vehicle::PI;
-		L_theta(i - 1, 0) = sinf(L_theta(i - 1, 1)) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 - cosf(L_theta(i - 1, 1))) / 8, -1.5) / 6;
-		//theta_min_candidate.emplace_back(t);
-		//L_min_candidate.emplace_back(sinf(t) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 - cosf(t)) / 8, -1.5) / 6);
+		L_theta(i - 1, 1) = PI / 3 + i*0.1f*PI;
+		L_theta(i - 1, 0) = sinf(L_theta(i - 1, 1)) / std::min(KMAX, std::abs(KMIN))*powf((1 - cosf(L_theta(i - 1, 1))) / 8, -1.5) / 6;
 	}// to satisfy the maximum */
 	L_theta(5, 0) = 0;
-	L_theta(5, 1) = Vehicle::PI;	
+	L_theta(5, 1) = PI;	
 
 	float x, y, theta;
 
@@ -115,7 +101,6 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 	}
 
 	Vehicle::Node reference_node = *(route.begin());
-	//float theta_min/*, L_min*/;
 	int flag = 0; // 0:node++ 1:insert_node 2:end
 	auto node = route.begin();
 	Vehicle::Node *insert_node_tmp;
@@ -124,7 +109,6 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 	Vehicle::Node *insert_node = &*node;
 	std::vector<Vehicle::Node> before_end_insert_node;
 	while (flag!=2)
-	//for (auto node = route.begin() + 1; node != route.end() - 1; node++)
 	{
 		if (node == route.end() - 3 || node == route.end() - 2) // the end of the ctrlpoints
 		{
@@ -133,12 +117,11 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 
 			float theta = node_tmp->theta - (node_behind)->theta;
 			norm_theta_pi(&theta);
-			float L = std::min(dist(reference_node, *node_tmp), dist(*node_tmp, *(node_behind)));
-			if (L < (sinf(theta) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 - cosf(theta)) / 8, -1.5) / 6))
+			float L_real = std::min(dist(reference_node, *node_tmp), dist(*node_tmp, *(node_behind)));
+			if (L_real < (sinf(theta) / std::min(KMAX, std::abs(KMIN))*powf((1 - cosf(theta)) / 8, -1.5) / 6))
 			{
 				flag = -1;
 				float L_tmp, L_diff_tmp, L_diff = HUGE_VALF;
-				//float dist_refer_to_node = dist(*node_tmp, *(node + 1));
 				for (int i = 0; i < 5; i++)
 				{
 					if (L_theta(i, 0) > dist(*node_tmp, *(node_behind)))
@@ -162,7 +145,7 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 					norm_theta_pi(&new_theta); // insert node's theta
 					if (Vehicle::is_node_effect(insert_node_tmp) && (!collimap->iscollision(*node_tmp, insert_node_tmp)) && (!collimap->iscollision(insert_node_tmp, *node_behind)))
 					{
-						L_tmp = sinf(new_theta) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 + cosf(new_theta)) / 8, -1.5) / 6;
+						L_tmp = sinf(new_theta) / std::min(KMAX, std::abs(KMIN))*powf((1 + cosf(new_theta)) / 8, -1.5) / 6;
 						if (std::min(L_theta(i, 0), dist(insert_x, insert_y, reference_node.x, reference_node.y)) < L_tmp)
 						{
 							flag = 1;
@@ -232,8 +215,8 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 				
 		float theta = node_tmp->theta - (node + 1)->theta;
 		norm_theta_pi(&theta);
-		float L = std::min(dist(reference_node, *node_tmp), dist(*node_tmp, *(node + 1)));
-		if (L < (sinf(theta) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 - cosf(theta)) / 8, -1.5) / 6))
+		float L_real = std::min(dist(reference_node, *node_tmp), dist(*node_tmp, *(node + 1)));
+		if (L_real < (sinf(theta) / std::min(KMAX, std::abs(KMIN))*powf((1 - cosf(theta)) / 8, -1.5) / 6))
 		{
 			flag = -1;
 			float L_tmp, L_diff_tmp, L_diff = HUGE_VALF;
@@ -251,7 +234,7 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 					else
 						continue;
 				}
-				float insert_theta = (node_tmp->theta - Vehicle::PI) + theta / std::abs(theta)* L_theta(i, 1);
+				float insert_theta = (node_tmp->theta - PI) + theta / std::abs(theta)* L_theta(i, 1);
 				norm_theta_0_2pi(&insert_theta);
 				float insert_x = node_tmp->x + L_theta(i, 0)*cosf(insert_theta);
 				float insert_y = node_tmp->y + L_theta(i, 0)*sinf(insert_theta);
@@ -259,7 +242,7 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 				insert_node_tmp = &Vehicle::Node(insert_x, insert_y, insert_theta, 0.f);
 				if (Vehicle::is_node_effect(insert_node_tmp) && (!collimap->iscollision(*node_tmp, insert_node_tmp)) && (!collimap->iscollision(insert_node_tmp, *(node + 1))))
 				{
-					L_tmp = sinf(new_theta) / std::min(Vehicle::KMAX, std::abs(Vehicle::KMIN))*powf((1 - cosf(new_theta)) / 8, -1.5) / 6;
+					L_tmp = sinf(new_theta) / std::min(KMAX, std::abs(KMIN))*powf((1 - cosf(new_theta)) / 8, -1.5) / 6;
 					if (std::min(L_theta(i, 0), dist(insert_x, insert_y, (node + 1)->x, (node + 1)->y)) < L_tmp)
 					{
 						flag = 1;
@@ -291,8 +274,6 @@ void Trajectory::traj::_ctrl_points(const std::vector<Vehicle::Node> &route_tree
 				reference_node = insert_node;
 			}
 		}
-		//ctrl_points.emplace_back(0.5f*(ctrl_points.rbegin()->x + (node + 1)->x), 0.5f*(ctrl_points.rbegin()->y + (node + 1)->y));
-		//ctrl_points.emplace_back(*(node + 1));
 		else
 		{
 			reference_node = *node_tmp;
@@ -324,14 +305,19 @@ void Trajectory::traj::_bspline()
 	bspline.setCtrlp(ctrlp);
 }
 
-void Trajectory::traj::_state(float *accel)
+void Trajectory::traj::_state(float *accel, std::vector<State> *adjust_states_end)
 {
 	float u0[2];
-	for (auto &i : u0)
+	if (!knots.empty())
 	{
-		i = *knots.rbegin();
-		knots.pop_back();
+		for (auto &i : u0)
+		{
+			i = *knots.rbegin();
+			knots.pop_back();
+		}
 	}
+	else
+		state_future = *adjust_states_end;
 
 	float du = 0.001f;
 	State old_1, old_2;
@@ -399,7 +385,7 @@ void Trajectory::traj::_state(float *accel)
 	else
 	{
 		for (auto &i : state_future)
-			i._v(std::min(coeff_v[0], std::min(sqrtf(Vehicle::ALATER / abs(i._k())), Vehicle::VMAX)));
+			i._v(std::min(coeff_v[0], std::min(sqrtf(ALATER / abs(i._k())), VMAX)));
 			
 		*accel = 0;
 		return;
@@ -418,7 +404,7 @@ void Trajectory::traj::_state(float *accel)
 			j++;
 
 		t = (times(j - 1, 0) + (i._s_init() - lengths(j - 1, 0))*(times(j, 0) - times(j - 1, 0)) / (lengths(j, 0) - lengths(j - 1, 0)));
-		i._v(std::min(coeff_v[0] + coeff_v[1] * t + coeff_v[2] * pow(t, 2), std::min(sqrtf(Vehicle::ALATER / abs(i._k())), Vehicle::VMAX)));
+		i._v(std::min(coeff_v[0] + coeff_v[1] * t + coeff_v[2] * pow(t, 2), std::min(sqrtf(ALATER / abs(i._k())), VMAX)));
 	}
 
 	*accel = 2 * coeff_v[0] * t + coeff_v[1];
@@ -478,11 +464,11 @@ void Trajectory::traj::_v_tmp_dest(const float &accel)
 	std::reverse(v_tmp_dest.begin(), v_tmp_dest.end());
 }
 
-std::vector<Trajectory::State>* Trajectory::traj::_state(const float &a0, const float &sg)
+std::vector<Trajectory::State>* Trajectory::traj::_state(const float &a0, const float &sg, std::vector<State> *adjust_states_end)
 {
 	float accel = a0;
 	if (sg < (state_now.cbegin() + 9)->_s_init())
-		_state(&accel);
+		_state(&accel, adjust_states_end);
 	if (sg == (state_now.cbegin() + 1)->_s_init())
 	{
 		state_now.clear();
@@ -491,4 +477,63 @@ std::vector<Trajectory::State>* Trajectory::traj::_state(const float &a0, const 
 		state_future.clear();
 	}
 	return &state_now;
+}
+
+void Trajectory::adjust_k(const VectorXf &X, State *state, std::vector<State> *adjust_states, const int &flag)
+{
+	float dk_max = 1 / (LA*powf(cosf(WMAX), 2));
+	float s_total = X[3]*X[4]*dk_max;
+	float s0 = 0.05f*X[4];
+	//Vehicle::Node node;
+	//float v, s_init;
+	float a = X[3];
+	float b = -1 / (X[4] * dk_max); //k(s)=a+b*s
+	adjust_states->emplace_back(X);
+	float x, y, dx, dy;
+
+	for (float s = s0; s < s_total; s += s0)
+	{
+		dx = cosf(X[2] + a) + cosf(X[2] + a + b*s / 8);
+		dy = sinf(X[2] + a) + sinf(X[2] + a + b*s / 8);
+		for (int i = 1; i <= 5; i += 2)
+		{
+			dx += 4 * cosf(X[2] + a + b*i*s / 8);
+			dy += 4 * sinf(X[2] + a + b*i*s / 8);
+		}
+		for (int i = 1; i <= 3; i++)
+		{
+			dx += 2 * cosf(X[2] + a + b*i*s / 4);
+			dy += 2 * sinf(X[2] + a + b*i*s / 4);
+		}
+		dx *= s / 24;
+		dy *= s / 24;
+
+		float theta = X[2] + a*s + 0.5f*powf(s, 2)*b;
+		x = X[0] + dx;
+		y = X[1] + dy;
+		adjust_states->emplace_back(Vehicle::Node(x, y, theta, a + b*s), X[4], s);
+	}
+
+	dx = cosf(X[2] + a) + cosf(X[2] + a + b*s_total / 8);
+	dy = sinf(X[2] + a) + sinf(X[2] + a + b*s_total / 8);
+	for (int i = 1; i <= 5; i += 2)
+	{
+		dx += 4 * cosf(X[2] + a + b*i*s_total / 8);
+		dy += 4 * sinf(X[2] + a + b*i*s_total / 8);
+	}
+	for (int i = 1; i <= 3; i++)
+	{
+		dx += 2 * cosf(X[2] + a + b*i*s_total / 4);
+		dy += 2 * sinf(X[2] + a + b*i*s_total / 4);
+	}
+	dx *= s_total / 24;
+	dy *= s_total / 24;
+
+	x = X[0] + dx;
+	y = X[1] + dy;
+	state->_node(x, y, X[2] + a*s_total + 0.5f*powf(s_total, 2)*b, a + b*s_total);
+	state->_v(X[4]);
+
+	if (flag == 1)
+		std::reverse(adjust_states->begin(), adjust_states->end());
 }
